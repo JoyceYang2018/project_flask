@@ -6,10 +6,12 @@ from flask_script import Manager
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from datetime import datetime
-from 
+from flask_wtf import Form
+from wtforms import StringField,SubmitField
+from wtforms.validators import Required
 
 app = Flask(__name__)
-app.config['SECRET_KEY']=''
+app.config['SECRET_KEY']='hard to find out'
 
 
 manager = Manager(app)#把程序实例作为参数传给构造函数，初始化主类的实例，创建的对象可以在各个扩展中使用
@@ -18,10 +20,14 @@ moment = Moment(app)
 
 
 #路由和视图函数
-@app.route('/')
+@app.route('/',methods=['GET','POST'])
 def index():
-    #request在一个线程中全局可访问，这就是flask上下文
-    return render_template('index.html',current_time = datetime.utcnow())
+    name = None
+    form = NameForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        form.name.data = ''
+    return render_template('index.html',form = form,name = name)
 
 @app.route('/user/<name>')#动态部分，默认是字符串
 def user(name):
@@ -35,6 +41,14 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('500.html'),500
+
+
+
+
+class NameForm(Form):
+    name = StringField('What is your name?',validators=[Required()])#保证字段不为空
+    submit = SubmitField('Submit')
+
 
 if __name__ == '__main__':
     manager.run()#轮询，启用调试模式可以激活调试器和重载程序
