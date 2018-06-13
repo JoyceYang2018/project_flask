@@ -4,18 +4,24 @@
 from flask import Flask,request,render_template
 from flask_script import Manager
 from flask_bootstrap import Bootstrap
+from flask_moment import Moment
+from datetime import datetime
+from 
 
 app = Flask(__name__)
+app.config['SECRET_KEY']=''
+
 
 manager = Manager(app)#把程序实例作为参数传给构造函数，初始化主类的实例，创建的对象可以在各个扩展中使用
 bootstrap = Bootstrap(app)
+moment = Moment(app)
 
 
 #路由和视图函数
 @app.route('/')
 def index():
     #request在一个线程中全局可访问，这就是flask上下文
-    return render_template('index.html')
+    return render_template('index.html',current_time = datetime.utcnow())
 
 @app.route('/user/<name>')#动态部分，默认是字符串
 def user(name):
