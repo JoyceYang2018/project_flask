@@ -9,14 +9,45 @@ from datetime import datetime
 from flask_wtf import Form
 from wtforms import StringField,SubmitField
 from wtforms.validators import Required
+from flask_sqlalchemy import SQLAlchemy
+import os
+
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 app.config['SECRET_KEY']='hard to find out'
+app.config['SQLALCHEMY_DATABSE_URI']='sqlite:///'+os.path.join(basedir,'data.sqlite')
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+
 
 
 manager = Manager(app)#把程序实例作为参数传给构造函数，初始化主类的实例，创建的对象可以在各个扩展中使用
 bootstrap = Bootstrap(app)
 moment = Moment(app)
+db = SQLAlchemy(app)
+
+
+#定义模型
+class Role(db.Model):
+    __tablename__='roles'
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(64),unique=True)
+    users = db.relationship('User',backref = 'role')
+
+    def __repr__(self):
+        return '<Role %r>'%self.name
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True,index=True)
+    role_id = db.Column(db.Integer,db.ForeignKey('roles.id'))
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+
 
 
 #路由和视图函数
