@@ -2,7 +2,7 @@
 
 #初始化一个Flask对象
 from flask import Flask,request,render_template,session,redirect,url_for,flash
-from flask_script import Manager
+from flask_script import Manager,Shell
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from datetime import datetime
@@ -10,6 +10,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField,SubmitField
 from wtforms.validators import Required
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate,MigrateCommand
 import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -26,6 +27,15 @@ manager = Manager(app)#把程序实例作为参数传给构造函数，初始化
 bootstrap = Bootstrap(app)
 moment = Moment(app)
 db = SQLAlchemy(app)
+migrate = Migrate(app,db)
+
+#对shell配置,使用shell命令时，自动导入app，db，User和Role
+def make_shell_context():
+    return dict(app=app,db=db,User=User,Role=Role)
+manager.add_command('shell',Shell(make_context=make_shell_context))
+
+manager.add_command('db',MigrateCommand)
+
 
 
 #定义模型
