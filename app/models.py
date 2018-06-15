@@ -4,8 +4,10 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from . import login_manager,db
 from flask_login import UserMixin,AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask import current_app
+from flask import current_app,request
 from datetime import datetime
+import hashlib
+
 
 class Role(db.Model):
     __tablename__='roles'
@@ -66,6 +68,7 @@ class User(UserMixin,db.Model):
     about_me = db.Column(db.Text())
     member_since = db.Column(db.DateTime(),default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(),default=datetime.utcnow)
+    avatar_hash = db.Column(db.String(32))
 
 
     def __init__(self,**kwargs):
@@ -75,6 +78,29 @@ class User(UserMixin,db.Model):
                 self.role = Role.query.filter_by(permissions=0xff).first()
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
+
+        if self.email is not None and self.avatar_hash is None:
+            self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
+
+
+
+    def change_email(self,token):
+        #self.email = new_email
+        self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
+        db.session.add(self)
+        return True
+
+
+
+    def gravatar(self, size=100, default='identicon', rating='g'):
+        if request.is_secure:
+            url = 'https://secure.gravatar.com/avatar'
+        else:
+            url = 'http://www.gravatar.com/avatar'
+        hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
+        return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(url=url, hash=hash, size=size, default=default,
+                                                                     rating=rating)
+
 
 
     def can(self,permissions):
@@ -111,6 +137,9 @@ class User(UserMixin,db.Model):
         self.confirmed = True
         db.session.add(self)
         return True
+
+
+
 
 
 
