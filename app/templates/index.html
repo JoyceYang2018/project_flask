@@ -21,3 +21,8 @@
 {%endblock%}
 
 <!--refresh=True可以把内容随时间推移进行更新-->
+
+{%block scripts%}
+{{super()}}
+{{pagedown.include_pagedown()}}
+{%endblock%}
