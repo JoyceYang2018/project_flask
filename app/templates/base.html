@@ -32,6 +32,9 @@ type="image/x-icon"> {% endblock %}
                     </a>
                 </li>
                 {%endif%}
+                {%if current_user.can(Permission.MODERATE_COMMENTS)%}
+                <li><a href="{{url_for('main.moderate')}}">Moderate Comments</a> </li>
+                {%endif%}
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {%if current_user.is_authenticated%}
