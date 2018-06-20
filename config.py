@@ -10,6 +10,11 @@ class Config:
     FLASKY_MAIL_SENDER = os.environ.get('MAIL_USERNAME')
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
     FLASKY_POSTS_PER_PAGE = os.environ.get('FLASKY_POSTS_PER_PAGE')
+    FLASKY_COMMENTS_PER_PAGE = os.environ.get('FLASKY_COMMENTS_PER_PAGE')
+    FLASKY_FOLLOWERS_PER_PAGE = os.environ.get('FLASKY_FOLLOWERS_PER_PAGE')
+
+
+
 
     @staticmethod
     def init_app(app):

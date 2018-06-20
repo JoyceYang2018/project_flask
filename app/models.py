@@ -80,6 +80,7 @@ class User(UserMixin,db.Model):
     last_seen = db.Column(db.DateTime(),default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     posts = db.relationship('Post',backref='author',lazy='dynamic')
+    comments = db.relationship('Comment',backref='author',lazy='dynamic')
 
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
@@ -103,6 +104,8 @@ class User(UserMixin,db.Model):
 
         if self.email is not None and self.avatar_hash is None:
             self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
+
+
 
 
 
@@ -209,6 +212,21 @@ class User(UserMixin,db.Model):
 
 
 
+    @staticmethod
+    def add_self_follows():
+        for user in User.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+                db.session.commit()
+
+
+
+
+
+    @property
+    def followed_posts(self):
+        return Post.query.join(Follow,Follow.followed_id==Post.author_id).filter(Follow.follower_id==self.id)
 
 
 
@@ -251,6 +269,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime,index=True,default=datetime.utcnow)
     author_id = db.Column(db.Integer,db.ForeignKey('users.id'))
     body_html = db.Column(db.Text)
+    comments = db.relationship('Comment',backref='post',lazy='dynamic')
 
 
     @staticmethod
@@ -283,3 +302,23 @@ db.event.listen(Post.body,'set',Post.on_change_body)
 
 
 
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer,primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime,index=True,default=datetime.utcnow)
+    disabled = db.Column(db.Boolean)
+    author_id = db.Column(db.Integer,db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer,db.ForeignKey('posts.id'))
+
+    @staticmethod
+    def on_change_body(target,value,oldvalue,initiator):
+        allowed_tags = ['a','abbr','acronym','b','code','em','i','strong']
+        target.body_html = bleach.linkify(bleach.clean(
+            markdown(value,output_format='html'),
+            tags=allowed_tags,strip=True
+        ))
+
+db.event.listen(Comment.body,'set',Comment.on_change_body)
