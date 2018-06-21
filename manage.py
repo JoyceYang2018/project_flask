@@ -1,3 +1,6 @@
+#coding:utf-8
+
+
 import os
 from app import create_app,db
 from app.models import User,Role,Post,AnonymousUser,Permission
@@ -43,6 +46,34 @@ def test(coverage=False):
         COV.html_report(directory=covdir)
         print('HTML version:file://%s/index.html'%covdir)
         COV.erase()
+
+
+@manager.command
+def profile(length=25,profile_dir=None):
+    #在源码分析器下运行app
+    from werkzeug.contrib.profiler import ProfilerMiddleware
+    app.wsgi_app = ProfilerMiddleware(app.wsgi_app,restrictions=[length],
+                                      profile_dir=profile_dir)
+    app.run()
+
+
+
+@manager.command
+def deploy():
+    #运行部署命令
+    from flask_migrate import upgrade
+    from app.models import Role,User
+
+    #把数据库迁移到最新修订版本
+    upgrade()
+
+    #创建用户角色
+    Role.insert_roles()
+
+    #让所有用户都关注此用户
+    User.add_self_follows()
+
+
 
 
 if __name__ == '__main__':
