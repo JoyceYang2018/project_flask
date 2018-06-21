@@ -1,5 +1,6 @@
 import unittest
 from app.models import User,Role,Permission,AnonymousUser
+from app import db,create_app
 
 class UserModelTestCase(unittest.TestCase):
     def test_password_setter(self):
@@ -32,3 +33,17 @@ class UserModelTestCase(unittest.TestCase):
     def test_anonymous_user(self):
         u=AnonymousUser()
         self.assertFalse(u.can(Permission.FOLLOW))
+
+
+    def setUp(self):
+        self.app = create_app('testing')
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+        Role.insert_roles()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()

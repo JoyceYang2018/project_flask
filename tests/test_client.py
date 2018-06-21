@@ -10,7 +10,7 @@ from app.models import User,Role
 class FlaskClientTestCase(unittest.TestCase):
     def setUp(self):
         self.app = create_app('testing')
-        self.app_context = self.app_context()
+        self.app_context = self.app.app_context()
         self.app_context.push()
         db.create_all()
         Role.insert_roles()
@@ -45,7 +45,7 @@ class FlaskClientTestCase(unittest.TestCase):
             'password': 'cat'
         },follow_redirects=True)
         data = response.get_data(as_text=True)
-        self.assertTrue(re.search('Hello,\s+john!',data))
+        self.assertTrue(re.search('Hello,\s*john!',data))
         self.assertTrue('You have not confirmed your account yet' in data)
 
 

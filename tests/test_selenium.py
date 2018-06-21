@@ -4,7 +4,7 @@
 from selenium import webdriver
 from app import create_app,db
 from app.models import Role,User,Post
-import unittest,threading,re
+import unittest,threading,re,time
 
 class SeleniumTestCase(unittest.TestCase):
     client = None
@@ -21,7 +21,7 @@ class SeleniumTestCase(unittest.TestCase):
         if cls.client:
             #创建程序
             cls.app = create_app('testing')
-            cls.app_context = cls.app_context()
+            cls.app_context = cls.app.app_context()
             cls.app_context.push()
 
             #禁止日志，保持输出简洁
@@ -39,14 +39,15 @@ class SeleniumTestCase(unittest.TestCase):
             admin_role = Role.query.filter_by(permissions=0xff).first()
             admin = User(email='john@example.com',
                          username='john',
-                         passwrod='cat',
+                         password='cat',
                          role=admin_role,
                          confirmed=True)
             db.session.add(admin)
             db.session.commit()
 
             #在一个线程中启动flask服务器
-            threading.Thread(target=cls.app.run).start()
+            threading.Thread(target=cls.app.run,kwargs={'debug': False}).start()
+            time.sleep(1)
 
 
 
@@ -58,8 +59,9 @@ class SeleniumTestCase(unittest.TestCase):
             cls.client.close()
 
             #销毁数据库
-            db.drop_all()
             db.session.remove()
+            db.drop_all()
+
 
             #删除程序上下文
             cls.app_context.pop()
@@ -81,18 +83,18 @@ class SeleniumTestCase(unittest.TestCase):
     def test_admin_home_page(self):
         #进入首页
         self.client.get('http://localhost:5000/')
-        self.assertTrue(re.search('Hello,\s+Stranger!',
+        self.assertTrue(re.search('Hello,\s*Stranger!',
                                   self.client.page_source))
 
         #进入登录页面
-        self.client.find_element_by_link_text('Log In').click()
+        self.client.find_element_by_link_text('Sign In').click()
         self.assertTrue('<h1>Login</h1>' in self.client.page_source)
 
         #登录
         self.client.find_element_by_name('email').send_keys('john@example.com')
         self.client.find_element_by_name('password').send_keys('cat')
         self.client.find_element_by_name('submit').click()
-        self.assertTrue(re.search('Hello,\s+john!',self.client.page_source))
+        self.assertTrue(re.search('Hello,\s*john!',self.client.page_source))
 
         #进入用户个人资料页面
         self.client.find_element_by_link_text('Profile').click()
