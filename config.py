@@ -20,6 +20,7 @@ class Config:
     FLASKY_FOLLOWERS_PER_PAGE = 50
     SQLALCHEMY_RECORD_QUERIES = True
     FLASKY_SLOW_DB_QUERY_TIME = 0.5
+    SSL_DISABLED = True
 
 
 
@@ -74,11 +75,31 @@ class ProductionConfig(Config):
 
 
 
+class HerokuConfig(ProductionConfig):
+    @classmethod
+    def init_app(cls,app):
+        ProductionConfig.init_app(app)
+
+
+        #输出到stderr
+        import logging
+        from logging import StreamHandler
+        file_handler = StreamHandler()
+        file_handler.setLevel(logging.WARNING)
+        app.logger.addHandler(file_handler)
+
+        from werkzeug.contrib.fixers import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app)
+
+    SSL_DISABLED = bool(os.environ.get('SSL_DISABLED'))
+
+
 
 
 config = {
     'development':DevelopmentConfig,
     'testing':TestingConfig,
     'production':ProductionConfig,
+    'heroku':HerokuConfig,
     'default':DevelopmentConfig
 }
